@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException, Depends, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 import os
@@ -13,8 +15,6 @@ from .email_utils import send_verification_email
 from .rating import update_pts_after_match, update_solo_record
 from .websocket_manager import manager
 from .game_logic import generate_field
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 
 load_dotenv()
 
@@ -75,10 +75,6 @@ def get_current_admin(current_user: User = Depends(get_current_user)):
     return current_user
 
 # ---------- Публичные эндпоинты ----------
-@app.get("/")
-def root():
-    return {"message": "ВесёлыйРяд API", "version": "1.0.0"}
-
 @app.get("/api/generate-field")
 def generate_game_field():
     return {"field": generate_field()}
@@ -331,7 +327,21 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
-# ---------- Startup (создание тестовых пользователей) ----------
+# ---------- Раздача статических файлов и HTML ----------
+app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
+app.mount("/assets", StaticFiles(directory="frontend/assets"), name="assets")
+
+@app.get("/")
+async def serve_index():
+    return FileResponse("frontend/index.html")
+
+@app.get("/{page}")
+async def serve_pages(page: str):
+    if page.endswith(".html"):
+        return FileResponse(f"frontend/{page}")
+    raise HTTPException(404, "Page not found")
+
+# ---------- Startup ----------
 @app.on_event("startup")
 def startup():
     database.Base.metadata.create_all(bind=database.engine)
