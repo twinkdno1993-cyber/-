@@ -13,6 +13,8 @@ from .email_utils import send_verification_email
 from .rating import update_pts_after_match, update_solo_record
 from .websocket_manager import manager
 from .game_logic import generate_field
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 load_dotenv()
 
