@@ -2,6 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ВесёлыйРяд | Мультиплеер</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -154,7 +155,10 @@
         let gameActive = false;
         let currentRoomId = null;
         let searching = false;
-        const API = 'http://localhost:8000';
+        
+        // Адрес API — на Render'е
+        const API = window.location.origin;
+        const WS_URL = API.replace('http://', 'wss://').replace('https://', 'wss://');
 
         function connectWebSocket() {
             const token = localStorage.getItem('access_token');
@@ -163,11 +167,12 @@
                 window.location.href = 'index.html';
                 return;
             }
-            ws = new WebSocket(`${API.replace('http', 'ws')}/ws/${token}`);
+            ws = new WebSocket(`${WS_URL}/ws/${token}`);
             
             ws.onopen = () => console.log('WebSocket подключён');
             ws.onmessage = (event) => handleMessage(JSON.parse(event.data));
             ws.onclose = () => console.log('WebSocket отключён');
+            ws.onerror = (error) => console.error('WebSocket ошибка:', error);
         }
 
         function handleMessage(msg) {
